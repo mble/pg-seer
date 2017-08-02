@@ -1,4 +1,4 @@
-TEST := ./...
+TEST := $(shell go list ./... | grep -v vendor)
 
 default : test vet
 
