@@ -2,12 +2,22 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+)
+
+var (
+	sha1ver     string
+	buildTime   string
+	database    string
+	user        string
+	versionFlag bool
 )
 
 type unusedIndexes struct {
@@ -26,13 +36,14 @@ func (u *unusedIndexes) String() string {
 	return out.String()
 }
 
-func main() {
-	db, err := sqlx.Connect("postgres", "dbname=mblewitt user=mblewitt sslmode=disable")
+func executeDemoQuery(database string, user string) {
+	connectionArgs := fmt.Sprintf("dbname=%s user=%s sslmode=disable", database, user)
+	db, err := sqlx.Connect("postgres", connectionArgs)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	unusedIdx, err := ioutil.ReadFile("queries/unused_indexes.sql")
+	unusedIdx, err := ioutil.ReadFile("sql/unused_indexes.sql")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -47,4 +58,25 @@ func main() {
 		}
 		fmt.Printf("%v\n", unused)
 	}
+}
+
+func parseCommandLineFlags() {
+	flag.BoolVar(&versionFlag, "version", false, "print version")
+	flag.StringVar(&database, "database", "", "database to connect to")
+	flag.StringVar(&user, "user", "", "database user to connect as")
+	flag.Parse()
+	if versionFlag {
+		fmt.Printf("Build: %s %s\n", sha1ver, buildTime)
+		os.Exit(0)
+	} else if database == "" || user == "" {
+		log.Println("must pass in both database and user flags")
+		flag.Usage()
+		os.Exit(1)
+	} else {
+		executeDemoQuery(database, user)
+	}
+}
+
+func main() {
+	parseCommandLineFlags()
 }
