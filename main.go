@@ -10,11 +10,10 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/mble/pg-seer/version"
 )
 
 var (
-	sha1ver     string
-	buildTime   string
 	database    string
 	user        string
 	versionFlag bool
@@ -66,7 +65,7 @@ func parseCommandLineFlags() {
 	flag.StringVar(&user, "user", "", "database user to connect as")
 	flag.Parse()
 	if versionFlag {
-		fmt.Printf("Build: %s %s\n", sha1ver, buildTime)
+		log.Printf("Version: %s Build: %s\n", version.VERSION, version.GITCOMMIT)
 		os.Exit(0)
 	} else if database == "" || user == "" {
 		log.Println("must pass in both database and user flags")
