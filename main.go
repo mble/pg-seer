@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -32,11 +33,16 @@ type unusedIndexes struct {
 
 func (u *unusedIndexes) String() string {
 	var out bytes.Buffer
-	out.WriteString(fmt.Sprintf("%q", u.IndexRelname))
+	fields := reflect.Indirect(reflect.ValueOf(u))
+
+	for i := 0; i < fields.NumField(); i++ {
+		out.WriteString(fmt.Sprintf("%v: %v", fields.Type().Field(i).Name, fields.Field(i).Interface()))
+		out.WriteString("\n")
+	}
 	return out.String()
 }
 
-func executeDemoQuery(database string, user string) {
+func executeDemoQuery(database string, user string, port string) {
 	connectionArgs := fmt.Sprintf("dbname=%s user=%s port=%s sslmode=disable ", database, user, port)
 	db, err := sqlx.Connect("postgres", connectionArgs)
 	if err != nil {
@@ -51,12 +57,15 @@ func executeDemoQuery(database string, user string) {
 	rows, err := db.Queryx(string(unusedIdx))
 	unused := unusedIndexes{}
 
+	fmt.Printf("Unused Indexes\n")
+	fmt.Printf("==============\n\n")
+
 	for rows.Next() {
 		err := rows.StructScan(&unused)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("%v\n", unused)
+		fmt.Printf("%s\n", unused.String())
 	}
 }
 
@@ -76,7 +85,7 @@ func parseCommandLineFlags() {
 		flag.Usage()
 		os.Exit(1)
 	} else {
-		executeDemoQuery(database, user)
+		executeDemoQuery(database, user, port)
 	}
 }
 
