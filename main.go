@@ -16,6 +16,7 @@ import (
 var (
 	database    string
 	user        string
+	port        string
 	versionFlag bool
 )
 
@@ -36,7 +37,7 @@ func (u *unusedIndexes) String() string {
 }
 
 func executeDemoQuery(database string, user string) {
-	connectionArgs := fmt.Sprintf("dbname=%s user=%s sslmode=disable", database, user)
+	connectionArgs := fmt.Sprintf("dbname=%s user=%s port=%s sslmode=disable ", database, user, port)
 	db, err := sqlx.Connect("postgres", connectionArgs)
 	if err != nil {
 		log.Fatalln(err)
@@ -63,11 +64,14 @@ func parseCommandLineFlags() {
 	flag.BoolVar(&versionFlag, "version", false, "print version")
 	flag.StringVar(&database, "database", "", "database to connect to")
 	flag.StringVar(&user, "user", "", "database user to connect as")
+	flag.StringVar(&port, "port", "", "port to connect on")
 	flag.Parse()
 	if versionFlag {
 		log.Printf("Version: %s Build: %s\n", version.VERSION, version.GITCOMMIT)
 		os.Exit(0)
-	} else if database == "" || user == "" {
+	}
+
+	if database == "" || user == "" {
 		log.Println("must pass in both database and user flags")
 		flag.Usage()
 		os.Exit(1)
