@@ -7,18 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"reflect"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/mble/pg-seer/version"
-)
-
-var (
-	database    string
-	user        string
-	port        string
-	versionFlag bool
 )
 
 type unusedIndexes struct {
@@ -70,22 +64,33 @@ func executeDemoQuery(database string, user string, port string) {
 }
 
 func parseCommandLineFlags() {
+	var (
+		database    string
+		role        string
+		port        string
+		versionFlag bool
+	)
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Fatalf("Could not get current user from os")
+	}
+
 	flag.BoolVar(&versionFlag, "version", false, "print version")
-	flag.StringVar(&database, "database", "", "database to connect to")
-	flag.StringVar(&user, "user", "", "database user to connect as")
-	flag.StringVar(&port, "port", "", "port to connect on")
+	flag.StringVar(&database, "database", "", "database to connects to")
+	flag.StringVar(&role, "role", currentUser.Username, "database role to connect as")
+	flag.StringVar(&port, "port", "5432", "port to connect on")
 	flag.Parse()
 	if versionFlag {
 		log.Printf("Version: %s Build: %s\n", version.VERSION, version.GITCOMMIT)
 		os.Exit(0)
 	}
 
-	if database == "" || user == "" {
-		log.Println("must pass in both database and user flags")
+	if database == "" {
+		log.Println("must pass in database flag")
 		flag.Usage()
 		os.Exit(1)
 	} else {
-		executeDemoQuery(database, user, port)
+		executeDemoQuery(database, role, port)
 	}
 }
 
