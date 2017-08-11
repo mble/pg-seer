@@ -36,13 +36,13 @@ func (u *unusedIndexes) String() string {
 	return out.String()
 }
 
-func executeDemoQuery(database string, user string, port string) {
-	connectionArgs := fmt.Sprintf("dbname=%s user=%s port=%s sslmode=disable ", database, user, port)
-	db, err := sqlx.Connect("postgres", connectionArgs)
-	if err != nil {
-		log.Fatalln(err)
-	}
+func establishConnection(database, role, port string) *sqlx.DB {
+	connectionArgs := fmt.Sprintf("dbname=%s user=%s port=%s sslmode=disable", database, role, port)
+	db := sqlx.MustConnect("postgres", connectionArgs)
+	return db
+}
 
+func executeDemoQuery(db *sqlx.DB) {
 	unusedIdx, err := ioutil.ReadFile("sql/unused_indexes.sql")
 	if err != nil {
 		log.Fatalln(err)
@@ -90,7 +90,8 @@ func parseCommandLineFlags() {
 		flag.Usage()
 		os.Exit(1)
 	} else {
-		executeDemoQuery(database, role, port)
+		db := establishConnection(database, role, port)
+		executeDemoQuery(db)
 	}
 }
 
